@@ -22,9 +22,6 @@ object Aes256Utils {
         private const val Transformation = "AES/CBC/PKCS5PADDING"
         private const val IvLength = 16
 
-        /**
-         * Encrypt
-         */
         fun encrypt(data: ByteArray, secretKey: ByteArray): ByteArray {
             val cipher = Cipher.getInstance(Transformation)
             val ivSpec = IvParameterSpec(randomNonce(IvLength))
@@ -59,14 +56,14 @@ object Aes256Utils {
 
     }
 
+    /**
+     * AES-256 GCM and Decryption
+     */
     object GCM {
         private const val Transformation = "AES/GCM/NoPadding"
         private const val NonceSize = 96 / 8 // 96 bit
         private const val AuthTagLength = 128
 
-        /**
-         * Encrypt
-         */
         fun encrypt(data: ByteArray, secretKey: ByteArray): ByteArray {
             val cipher = Cipher.getInstance(Transformation)
             val keySpec = SecretKeySpec(generateHashKey(secretKey), Algorithm)
@@ -84,9 +81,6 @@ object Aes256Utils {
         }
 
 
-        /**
-         * Decrypt
-         */
         @Throws(Exception::class)
         fun decrypt(cipherText: ByteArray, secretKey: ByteArray): ByteArray {
             val cipher = Cipher.getInstance(Transformation)
@@ -95,6 +89,7 @@ object Aes256Utils {
             cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec)
             return cipher.doFinal(cipherText.sliceArray(12 until cipherText.size))
         }
+
 
         fun decrypt(cipherText: String, secretKey: String): String {
             val decrypted = this.decrypt(hexStringToByteArray(cipherText), secretKey.toByteArray())
