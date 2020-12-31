@@ -23,7 +23,7 @@ fun encTest(prefix: String): String {
             i++
         }
     } catch (e: Exception) {
-        e.printStackTrace()
+//        e.printStackTrace()
         println("[error] ${e.message}")
     }
     return "${prefix} done / "
