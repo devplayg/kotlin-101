@@ -14,6 +14,9 @@ object Aes256Cbc {
     private const val Digits = "0123456789abcdef"
     private val HexChars = Digits.toByteArray()
 
+    /**
+     * Encrypt
+     */
     fun encrypt(data: ByteArray, secretKey: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(Transformation)
         val ivParamSpec = IvParameterSpec(randomIv())
@@ -29,6 +32,9 @@ object Aes256Cbc {
     }
 
 
+    /**
+     * Decrypt
+     */
     @Throws(Exception::class)
     fun decrypt(cipherText: ByteArray, secretKey: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(Transformation)
