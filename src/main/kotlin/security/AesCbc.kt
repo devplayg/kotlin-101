@@ -13,7 +13,7 @@ object Aes256Utils {
     private const val Algorithm = "AES"
     private const val HashAlgorithm = "SHA-256" // for key spec.
     private const val Digits = "0123456789abcdef"
-    private val HexChars = Digits.toByteArray()
+//    private val HexChars = Digits.toByteArray()
 
 
     /**
@@ -23,19 +23,37 @@ object Aes256Utils {
         private const val Transformation = "AES/CBC/PKCS5PADDING"
         private const val IvLength = 16
 
+        @Throws(Exception::class)
         fun encrypt(data: ByteArray, secretKey: ByteArray): ByteArray {
             val cipher = Cipher.getInstance(Transformation)
             val ivSpec = IvParameterSpec(randomNonce(IvLength))
-            val keySpec = SecretKeySpec(generateHashKey(secretKey), Algorithm)
+            val keySpec = SecretKeySpec(secretKey, Algorithm)
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
             val encrypted = cipher.doFinal(data)
-            return ivSpec.iv!! + encrypted
+            return ivSpec.iv!! + encrypted // IV + CipherText
         }
 
-        fun encrypt(plainText: String, secretKey: String): String {
-            val encrypted = this.encrypt(plainText.toByteArray(), secretKey.toByteArray())
-            return Base64.getEncoder().encodeToString(encrypted)
+        @Throws(Exception::class)
+        fun encrypt(plainText: String, secretKey: ByteArray): String {
+            val encrypted = this.encrypt(plainText.toByteArray(), secretKey)
+            return Base64.getEncoder().encodeToString(encrypted) // Base64(IV + CipherText)
         }
+
+        @Throws(Exception::class)
+        fun encrypt(data: ByteArray, secretKey: ByteArray, iv: ByteArray): ByteArray {
+            val cipher = Cipher.getInstance(Transformation)
+            val ivSpec = IvParameterSpec(iv)
+            val keySpec = SecretKeySpec(secretKey, Algorithm)
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
+            return cipher.doFinal(data)
+        }
+
+        @Throws(Exception::class)
+        fun encrypt(data: String, secretKey: ByteArray, iv: ByteArray): String {
+            val encrypted = this.encrypt(data.toByteArray(), secretKey, iv)
+            return Base64.getEncoder().encodeToString(encrypted) // Base64(IV + CipherText)
+        }
+
 
 
         /**
@@ -45,15 +63,31 @@ object Aes256Utils {
         fun decrypt(cipherText: ByteArray, secretKey: ByteArray): ByteArray {
             val cipher = Cipher.getInstance(Transformation)
             val ivSpec = IvParameterSpec(cipherText, 0, IvLength)
-            val keySpec = SecretKeySpec(generateHashKey(secretKey), Algorithm)
+            val keySpec = SecretKeySpec(secretKey, Algorithm)
             cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec)
             return cipher.doFinal(cipherText.sliceArray(IvLength until cipherText.size))
         }
 
         @Throws(Exception::class)
-        fun decrypt(cipherText: String, secretKey: String): String {
-            val decoded = Base64.getDecoder().decode(cipherText+"a")
-            val decrypted = this.decrypt(decoded, secretKey.toByteArray())
+        fun decrypt(cipherText: String, secretKey: ByteArray): String {
+            val decoded = Base64.getDecoder().decode(cipherText)
+            val decrypted = this.decrypt(decoded, secretKey)
+            return String(decrypted)
+        }
+
+        @Throws(Exception::class)
+        fun decrypt(cipherText: ByteArray, secretKey: ByteArray, iv: ByteArray): ByteArray {
+            val cipher = Cipher.getInstance(Transformation)
+            val ivSpec = IvParameterSpec(iv)
+            val keySpec = SecretKeySpec(secretKey, Algorithm)
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec)
+            return cipher.doFinal(cipherText)
+        }
+
+        @Throws(Exception::class)
+        fun decrypt(cipherText: String, secretKey: ByteArray, iv: ByteArray): String {
+            val decoded = Base64.getDecoder().decode(cipherText)
+            val decrypted = this.decrypt(decoded, secretKey, iv)
             return String(decrypted)
         }
 
@@ -64,7 +98,7 @@ object Aes256Utils {
      */
     object GCM {
         private const val Transformation = "AES/GCM/NoPadding"
-        private const val NonceSize = 96 / 8 // 96 bit
+        private const val NonceSize = 96 / 8 // 96 bit = 16 Bytes
         private const val AuthTagLength = 128
 
         fun encrypt(data: ByteArray, secretKey: ByteArray): ByteArray {
@@ -78,8 +112,8 @@ object Aes256Utils {
         }
 
 
-        fun encrypt(plainText: String, secretKey: String): String {
-            val encrypted = this.encrypt(plainText.toByteArray(), secretKey.toByteArray())
+        fun encrypt(plainText: String, secretKey: ByteArray): String {
+            val encrypted = this.encrypt(plainText.toByteArray(), secretKey)
             return Base64.getEncoder().encodeToString(encrypted)
         }
 
@@ -95,9 +129,9 @@ object Aes256Utils {
 
 
         @Throws(Exception::class)
-        fun decrypt(cipherText: String, secretKey: String): String {
+        fun decrypt(cipherText: String, secretKey: ByteArray): String {
             val decoded = Base64.getDecoder().decode(cipherText)
-            val decrypted = this.decrypt(decoded, secretKey.toByteArray())
+            val decrypted = this.decrypt(decoded, secretKey)
             return String(decrypted)
         }
     }
@@ -110,8 +144,8 @@ object Aes256Utils {
         // return Random.nextBytes(IvLength)
     }
 
-    private fun generateHashKey(key: ByteArray) = MessageDigest.getInstance(HashAlgorithm).digest(key)
-//
+    fun generateHashKey(key: ByteArray) = MessageDigest.getInstance(HashAlgorithm).digest(key)
+
 //    private fun byteArrayToHexString(byteArray: ByteArray): String {
 //        val hexChars = CharArray(byteArray.size * 2)
 //        for (i in byteArray.indices) {
